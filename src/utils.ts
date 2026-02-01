@@ -3,12 +3,24 @@ import { RAIN_INTENSITY } from "./constants";
 
 export function getWeatherCondition(
   cloudCover: number,
-  precipitation: number
+  precipitation: number,
+  sunshineDuration?: number
 ): WeatherCondition {
   if (precipitation >= RAIN_INTENSITY.heavy) return "heavyRain";
   if (precipitation >= RAIN_INTENSITY.moderate) return "rain";
   if (precipitation >= RAIN_INTENSITY.light) return "lightRain";
 
+  // If we have sunshine data, use it to adjust the condition
+  // sunshineDuration is in seconds per hour (max 3600)
+  if (sunshineDuration !== undefined) {
+    const sunshinePercent = (sunshineDuration / 3600) * 100;
+    if (sunshinePercent >= 70) return "clear";
+    if (sunshinePercent >= 40) return "partlyCloudy";
+    if (sunshinePercent >= 15) return "cloudy";
+    return "overcast";
+  }
+
+  // Fallback to cloud cover only
   if (cloudCover < 20) return "clear";
   if (cloudCover < 50) return "partlyCloudy";
   if (cloudCover < 80) return "cloudy";

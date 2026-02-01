@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import type { DayGroup, HourlyForecast } from "../types";
 import { fetchForecast, processResponse } from "../weatherService";
 import { LOCATION, REFRESH_INTERVAL_MS } from "../constants";
-import { DaySection } from "./DaySection";
+import { DaySummaryCard } from "./DaySummaryCard";
+import { DayDetailView } from "./DayDetailView";
 import {
   getWeatherCondition,
   getWeatherIcon,
@@ -15,6 +16,7 @@ export function ForecastStrip() {
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDayId, setSelectedDayId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
@@ -60,6 +62,18 @@ export function ForecastStrip() {
       invoke("update_tray_title", { title }).catch(console.error);
     }
   }, [currentTemp, currentIcon]);
+
+  // Default select today when data loads
+  useEffect(() => {
+    if (dayGroups.length > 0 && selectedDayId === null) {
+      const today = dayGroups.find(
+        (d) => d.date.toDateString() === new Date().toDateString()
+      );
+      if (today) setSelectedDayId(today.id);
+    }
+  }, [dayGroups, selectedDayId]);
+
+  const selectedDay = dayGroups.find((d) => d.id === selectedDayId);
 
   const handleQuit = async () => {
     try {
@@ -140,19 +154,20 @@ export function ForecastStrip() {
           </div>
         ) : (
           <>
-            {/* Today & Tomorrow - detailed view */}
-            <div className="flex gap-3">
-              {dayGroups.filter(d => d.isDetailedView).map((dayGroup) => (
-                <DaySection key={dayGroup.id} dayGroup={dayGroup} />
+            {/* Row 1: All 8 summary cards */}
+            <div className="flex gap-2 justify-center">
+              {dayGroups.map((dayGroup) => (
+                <DaySummaryCard
+                  key={dayGroup.id}
+                  dayGroup={dayGroup}
+                  isSelected={selectedDayId === dayGroup.id}
+                  onSelect={() => setSelectedDayId(dayGroup.id)}
+                />
               ))}
             </div>
 
-            {/* Days 3-7 - summary cards row */}
-            <div className="flex gap-3">
-              {dayGroups.filter(d => !d.isDetailedView).map((dayGroup) => (
-                <DaySection key={dayGroup.id} dayGroup={dayGroup} />
-              ))}
-            </div>
+            {/* Row 2: Expanded view of selected day */}
+            {selectedDay && <DayDetailView dayGroup={selectedDay} />}
           </>
         )}
       </div>

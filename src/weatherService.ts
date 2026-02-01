@@ -173,36 +173,19 @@ export function processResponse(response: WeatherAPIResponse): DayGroup[] {
   const tomorrowStr = tomorrow.toDateString();
 
   for (const [dayKey, hours] of grouped) {
-    const isToday = dayKey === todayStr;
-    const isTomorrow = dayKey === tomorrowStr;
-    const isDetailedView = isToday || isTomorrow;
+    // Show all 24 hours
+    const filteredHours = hours.sort((a, b) => a.hour - b.hour);
 
-    if (isDetailedView) {
-      // Today: every 3 hours, Tomorrow: every 6 hours
-      const filteredHours = hours
-        .filter((h) => (isToday ? h.hour % 3 === 0 : h.hour % 6 === 0))
-        .sort((a, b) => a.hour - b.hour);
+    const times = sunTimes.get(dayKey);
+    const sunrise = times?.sunrise ?? new Date(dayKey + " 06:00");
+    const sunset = times?.sunset ?? new Date(dayKey + " 18:00");
 
-      dayGroups.push({
-        id: dayKey,
-        date: new Date(dayKey),
-        hours: filteredHours.length > 0 ? filteredHours : hours,
-        isDetailedView: true,
-      });
-    } else {
-      // Days 3-8: summary only, using daytime-only cloud cover
-      const times = sunTimes.get(dayKey);
-      const sunrise = times?.sunrise ?? new Date(dayKey + " 06:00");
-      const sunset = times?.sunset ?? new Date(dayKey + " 18:00");
-
-      dayGroups.push({
-        id: dayKey,
-        date: new Date(dayKey),
-        hours: [], // no hourly data for summary view
-        isDetailedView: false,
-        summary: calculateSummary(hours, sunrise, sunset),
-      });
-    }
+    dayGroups.push({
+      id: dayKey,
+      date: new Date(dayKey),
+      hours: filteredHours.length > 0 ? filteredHours : hours,
+      summary: calculateSummary(hours, sunrise, sunset),
+    });
   }
 
   return dayGroups.sort((a, b) => a.date.getTime() - b.date.getTime());

@@ -65,8 +65,7 @@ export interface DayGroup {
   id: string;
   date: Date;
   hours: HourlyForecast[];
-  isDetailedView: boolean; // true for Today/Tomorrow, false for days 3+
-  summary?: DaySummary; // only for days 3+
+  summary: DaySummary;
 }
 
 export interface DaySummary {
