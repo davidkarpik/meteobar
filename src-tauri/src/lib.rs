@@ -53,7 +53,7 @@ pub fn run() {
                 .icon(transparent_icon)
                 .icon_as_template(true)
                 .title("--°")
-                .tooltip("Windy Weather")
+                .tooltip("MeteoBar")
                 .on_tray_icon_event(|tray, event| {
                     tauri_plugin_positioner::on_tray_event(tray.app_handle(), &event);
 

@@ -2,6 +2,21 @@
 
 A native macOS menu bar app displaying weather forecasts using ECMWF data via Open-Meteo API.
 
+## Claude Code Usage
+
+**Always start Claude from this directory:**
+```bash
+cd /Users/davidkarpik/Developer/MeteoBar
+claude
+```
+
+**Warning for directory renames:** If moving/renaming the project folder, change to the new directory BEFORE deleting the old one, otherwise the shell breaks:
+```bash
+mv old_dir/* new_dir/
+cd new_dir        # Change first!
+rm -rf old_dir    # Then delete
+```
+
 ## Tech Stack
 
 - **Framework**: Tauri 2.x (Rust backend + WebView frontend)
