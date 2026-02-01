@@ -1,6 +1,6 @@
-# Windy Weather Menu Bar App
+# MeteoBar
 
-A native macOS menu bar app displaying Windy-style weather forecasts using ECMWF data via Open-Meteo API.
+A native macOS menu bar app displaying weather forecasts using ECMWF data via Open-Meteo API.
 
 ## Tech Stack
 
@@ -12,13 +12,12 @@ A native macOS menu bar app displaying Windy-style weather forecasts using ECMWF
 ## Project Structure
 
 ```
-windy-tauri/
+meteobar/
 ├── src/                      # React frontend
 │   ├── components/
 │   │   ├── ForecastStrip.tsx # Main container with header/footer
 │   │   ├── DaySection.tsx    # Day column group
-│   │   ├── HourColumn.tsx    # Single hour data column
-│   │   └── RowLabels.tsx     # Fixed left labels
+│   │   └── HourColumn.tsx    # Single hour data column
 │   ├── App.tsx
 │   ├── main.tsx
 │   ├── index.css             # Tailwind imports
@@ -47,13 +46,13 @@ npm run tauri dev
 
 # Build release
 npm run tauri build
-# Output: src-tauri/target/release/bundle/macos/Windy Weather.app
+# Output: src-tauri/target/release/bundle/macos/MeteoBar.app
 
 # Frontend only (for UI development)
 npm run dev
 
 # Kill running app and restart with new build
-pkill -f "windy-tauri"; sleep 2; open "/Users/davidkarpik/Developer/Windy/windy-tauri/src-tauri/target/release/bundle/macos/Windy Weather.app"
+pkill -f "meteobar"; sleep 2; open "/Users/davidkarpik/Developer/MeteoBar/src-tauri/target/release/bundle/macos/MeteoBar.app"
 ```
 
 **Important**: After building, you must kill the running app before launching the new version. The app won't auto-reload - always run the kill/restart command after `npm run tauri build`.
@@ -83,8 +82,8 @@ export const LOCATION = {
 
 **Parameters**:
 - `latitude`, `longitude`: Location coordinates
-- `hourly`: temperature_2m, precipitation, wind_speed_10m, wind_gusts_10m, wind_direction_10m, cloud_cover
-- `forecast_days`: 5
+- `hourly`: temperature_2m, precipitation, snowfall, wind_speed_10m, wind_gusts_10m, wind_direction_10m, cloud_cover
+- `forecast_days`: 8
 - `timezone`: auto
 
 **Rate Limits**: 10,000 requests/day (free tier)
@@ -93,14 +92,13 @@ export const LOCATION = {
 
 - System tray icon (click to toggle forecast panel)
 - Dark gradient UI (macOS Weather app style)
-- 5-day forecast with adaptive intervals:
+- 8-day forecast with adaptive intervals:
   - Today: every 3 hours (8 data points)
-  - Future days: every 6 hours (4 data points)
-- Card-based day sections with semi-transparent backgrounds
+  - Tomorrow: every 6 hours (4 data points)
+  - Days 3-8: summary cards
+- Snow (cm) vs rain (mm) display with appropriate icons
 - Color-coded temperature (cyan=freezing, blue=cold, green=mild, orange=warm, red=hot)
 - Color-coded wind gusts (orange=strong, red=very strong)
-- Cyan precipitation intensity bars
-- Wind direction arrows
 - Auto-refresh every 30 minutes
 - Manual refresh button
 

@@ -1,12 +1,12 @@
 [package]
-name = "windy-tauri"
+name = "meteobar"
 version = "0.1.0"
-description = "Windy-style weather menu bar app"
+description = "macOS menu bar weather app using ECMWF data"
 authors = ["you"]
 edition = "2021"
 
 [lib]
-name = "windy_tauri_lib"
+name = "meteobar_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
