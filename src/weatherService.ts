@@ -8,7 +8,8 @@ export async function fetchForecast(): Promise<WeatherAPIResponse> {
     latitude: LOCATION.latitude.toString(),
     longitude: LOCATION.longitude.toString(),
     hourly:
-      "temperature_2m,precipitation,snowfall,wind_speed_10m,wind_gusts_10m,wind_direction_10m,cloud_cover",
+      "temperature_2m,precipitation,snowfall,wind_speed_10m,wind_gusts_10m,wind_direction_10m,cloud_cover,sunshine_duration",
+    daily: "sunrise,sunset",
     forecast_days: FORECAST_DAYS.toString(),
     wind_speed_unit: "kmh",
     timezone: "auto",
@@ -54,19 +55,70 @@ function getDominantCondition(hours: HourlyForecast[]): WeatherCondition {
   return dominant;
 }
 
-function calculateSummary(hours: HourlyForecast[]): DaySummary {
+function calculateSummary(
+  hours: HourlyForecast[],
+  sunrise: Date,
+  sunset: Date
+): DaySummary {
   const temps = hours.map(h => h.temperature);
-  const clouds = hours.map(h => h.cloudCover);
   const precip = hours.map(h => h.precipitation);
   const snow = hours.map(h => h.snowfall);
+  const sunshine = hours.map(h => h.sunshineDuration);
+
+  // Filter to daylight hours for cloud cover calculation
+  const sunriseHour = sunrise.getHours();
+  const sunsetHour = sunset.getHours();
+  const daytimeHours = hours.filter(h => {
+    const hour = h.date.getHours();
+    return hour >= sunriseHour && hour < sunsetHour;
+  });
+
+  // Use daytime hours for cloud cover if available, otherwise fall back to all hours
+  const cloudsSource = daytimeHours.length > 0 ? daytimeHours : hours;
+  const clouds = cloudsSource.map(h => h.cloudCover);
+
+  const sunshineHours = sunshine.reduce((a, b) => a + b, 0) / 3600;
+  const totalPrecipitation = precip.reduce((a, b) => a + b, 0);
+  const totalSnowfall = snow.reduce((a, b) => a + b, 0);
+
+  // Get base condition from hourly data
+  let dominantCondition = getDominantCondition(hours);
+
+  // Adjust condition based on actual sunshine hours
+  // If there's significant sunshine, cap the cloud condition
+  const hasPrecipitation = totalPrecipitation > 0.5 || totalSnowfall > 0.5;
+  if (!hasPrecipitation) {
+    if (sunshineHours >= 5) {
+      // More than 5h sunshine = at most partly cloudy
+      if (dominantCondition === "overcast" || dominantCondition === "cloudy") {
+        dominantCondition = "partlyCloudy";
+      }
+    } else if (sunshineHours >= 2) {
+      // 2-5h sunshine = at most cloudy
+      if (dominantCondition === "overcast") {
+        dominantCondition = "cloudy";
+      }
+    }
+  }
+
+  // Also adjust avgCloudCover to be more consistent with sunshine
+  // Use sunshine percentage to inform cloud cover display
+  const daylightHours = sunsetHour - sunriseHour;
+  const sunshinePercent = daylightHours > 0 ? (sunshineHours / daylightHours) * 100 : 0;
+  // Blend raw cloud average with sunshine-derived estimate
+  const rawCloudAvg = clouds.reduce((a, b) => a + b, 0) / clouds.length;
+  const sunshineBasedCloud = 100 - sunshinePercent;
+  // Weight sunshine more heavily as it's the actual measurement
+  const adjustedCloudCover = Math.round((rawCloudAvg * 0.3) + (sunshineBasedCloud * 0.7));
 
   return {
     maxTemp: Math.max(...temps),
     minTemp: Math.min(...temps),
-    avgCloudCover: Math.round(clouds.reduce((a, b) => a + b, 0) / clouds.length),
-    totalPrecipitation: precip.reduce((a, b) => a + b, 0),
-    totalSnowfall: snow.reduce((a, b) => a + b, 0),
-    dominantCondition: getDominantCondition(hours),
+    avgCloudCover: adjustedCloudCover,
+    sunshineHours,
+    totalPrecipitation,
+    totalSnowfall,
+    dominantCondition,
   };
 }
 
@@ -88,6 +140,17 @@ export function processResponse(response: WeatherAPIResponse): DayGroup[] {
       windGusts: response.hourly.wind_gusts_10m[i],
       windDirection: response.hourly.wind_direction_10m[i],
       cloudCover: response.hourly.cloud_cover[i],
+      sunshineDuration: response.hourly.sunshine_duration[i],
+    });
+  }
+
+  // Build sunrise/sunset lookup by date string
+  const sunTimes = new Map<string, { sunrise: Date; sunset: Date }>();
+  for (let i = 0; i < response.daily.time.length; i++) {
+    const dateKey = new Date(response.daily.time[i]).toDateString();
+    sunTimes.set(dateKey, {
+      sunrise: new Date(response.daily.sunrise[i]),
+      sunset: new Date(response.daily.sunset[i]),
     });
   }
 
@@ -127,13 +190,17 @@ export function processResponse(response: WeatherAPIResponse): DayGroup[] {
         isDetailedView: true,
       });
     } else {
-      // Days 3-7: summary only
+      // Days 3-8: summary only, using daytime-only cloud cover
+      const times = sunTimes.get(dayKey);
+      const sunrise = times?.sunrise ?? new Date(dayKey + " 06:00");
+      const sunset = times?.sunset ?? new Date(dayKey + " 18:00");
+
       dayGroups.push({
         id: dayKey,
         date: new Date(dayKey),
         hours: [], // no hourly data for summary view
         isDetailedView: false,
-        summary: calculateSummary(hours),
+        summary: calculateSummary(hours, sunrise, sunset),
       });
     }
   }

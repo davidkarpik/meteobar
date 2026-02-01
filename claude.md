@@ -56,8 +56,8 @@ meteobar/
 ## Commands
 
 ```bash
-# Development (hot reload)
-npm run tauri dev
+# Development (hot reload) - ALWAYS kill existing instances first!
+pkill -f meteobar; npm run tauri dev
 
 # Build release
 npm run tauri build
@@ -70,7 +70,7 @@ npm run dev
 pkill -f "meteobar"; sleep 2; open "/Users/davidkarpik/Developer/MeteoBar/src-tauri/target/release/bundle/macos/MeteoBar.app"
 ```
 
-**Important**: After building, you must kill the running app before launching the new version. The app won't auto-reload - always run the kill/restart command after `npm run tauri build`.
+**IMPORTANT**: Always kill existing app instances before running `npm run tauri dev` or launching a new build. The app does NOT auto-reload and will run multiple instances if you don't kill the old one first. Use `pkill -f meteobar` before starting.
 
 ## Configuration
 

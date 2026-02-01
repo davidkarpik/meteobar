@@ -11,7 +11,7 @@ export function DaySection({ dayGroup }: DaySectionProps) {
 
   // Summary view for days 3+
   if (!dayGroup.isDetailedView && dayGroup.summary) {
-    const { maxTemp, minTemp, avgCloudCover, totalPrecipitation, totalSnowfall, dominantCondition } = dayGroup.summary;
+    const { maxTemp, minTemp, avgCloudCover, sunshineHours, totalPrecipitation, totalSnowfall, dominantCondition } = dayGroup.summary;
     const icon = getWeatherIcon(dominantCondition);
     const tempColor = getTemperatureColor(maxTemp);
     const hasSnow = totalSnowfall >= 0.1;
@@ -38,6 +38,10 @@ export function DaySection({ dayGroup }: DaySectionProps) {
           <div className="flex items-center gap-1 mt-1 text-xs text-white/50">
             <span>☁️</span>
             <span>{avgCloudCover}%</span>
+          </div>
+          <div className="flex items-center gap-1 mt-0.5 text-xs text-amber-400">
+            <span>☀️</span>
+            <span>{sunshineHours.toFixed(1)}h</span>
           </div>
           <div className="flex items-center gap-0.5 mt-0.5 text-xs text-cyan-400">
             {hasSnow ? (
