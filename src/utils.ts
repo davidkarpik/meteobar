@@ -12,11 +12,13 @@ export function getWeatherCondition(
 
   // If we have sunshine data, use it to adjust the condition
   // sunshineDuration is in seconds per hour (max 3600)
+  // Apply 0.75 bias correction as models overestimate sunshine by ~25-30%
   if (sunshineDuration !== undefined) {
-    const sunshinePercent = (sunshineDuration / 3600) * 100;
-    if (sunshinePercent >= 70) return "clear";
-    if (sunshinePercent >= 40) return "partlyCloudy";
-    if (sunshinePercent >= 15) return "cloudy";
+    const correctedSunshine = sunshineDuration * 0.75;
+    const sunshinePercent = (correctedSunshine / 3600) * 100;
+    if (sunshinePercent >= 50) return "clear";
+    if (sunshinePercent >= 25) return "partlyCloudy";
+    if (sunshinePercent >= 10) return "cloudy";
     return "overcast";
   }
 

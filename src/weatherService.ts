@@ -77,7 +77,10 @@ function calculateSummary(
   const cloudsSource = daytimeHours.length > 0 ? daytimeHours : hours;
   const clouds = cloudsSource.map(h => h.cloudCover);
 
-  const sunshineHours = sunshine.reduce((a, b) => a + b, 0) / 3600;
+  // Only sum sunshine during daylight hours and apply bias correction (models overestimate by ~20-30%)
+  const daytimeSunshine = daytimeHours.map(h => h.sunshineDuration);
+  const rawSunshineHours = daytimeSunshine.reduce((a, b) => a + b, 0) / 3600;
+  const sunshineHours = rawSunshineHours * 0.75; // Bias correction factor
   const totalPrecipitation = precip.reduce((a, b) => a + b, 0);
   const totalSnowfall = snow.reduce((a, b) => a + b, 0);
 
